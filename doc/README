@@ -1,0 +1,7 @@
+Before you start the application, you must set two essential parameters: The wallpaper directory and the interval time between two slides.
+
+Two ways to do that:
+1. Write a config file to "~/.config/WallpaperSlider/conf.ini". See "example.conf.ini" to write a config file.
+2. Pass command line parameters to the application: ./main.py -d "/path/to/wallpapers" -t 60. And your configuration will be automatically write to the conf.ini path.
+
+Type "./main --help" for help

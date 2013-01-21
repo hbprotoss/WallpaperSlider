@@ -3,6 +3,7 @@
 import gtk, gobject
 import argparse
 import os, sys
+import urllib
 import threading
 import time
 import ConfigParser
@@ -37,29 +38,8 @@ class WallpaperApp:
     interval_time = None
     
     def __init__( self ):
-        self.parameter = self.initParser()
-        conf = Configure()
-        conf.add_section(SECTION_NAME)
-        if(len(sys.argv) == 1):
-            # No command line parameters given, read from conf file
-            try:
-                conf.read(CONFIG_FILE)
-                self.directory = os.path.expanduser(conf.get(SECTION_NAME, 'directory'))
-                self.interval_time = conf.get(SECTION_NAME, 'interval_time')
-            except:
-                print >> sys.stderr, '''No command parameters and Error reading configuration file. Please refer to README.'''
-                quit()
-        else:
-            # Parse command line parameter
-            self.directory = os.path.expanduser(self.parameter.directory)
-            self.interval_time = self.parameter.interval_time
-            # Record to conf file
-            dirname = os.path.dirname(CONFIG_FILE)
-            if(not os.path.exists(dirname)):
-                os.makedirs(dirname)
-            conf.set(SECTION_NAME, 'directory', self.directory)
-            conf.set(SECTION_NAME, 'interval_time', self.interval_time)
-            conf.write(open(CONFIG_FILE, 'w'))
+        parameters = self.initParser()
+        self.initParameters(parameters)
         
         # Loading UI from glade       
         signal = {
@@ -77,13 +57,15 @@ class WallpaperApp:
         self.menu = glade.get_object('menu_popup')
         self.menu_slide = glade.get_object('menu_slide')
         self.menu_slide.set_use_stock(True)
+        # TODO:Bugs after recover from Pause state, so disable the menu temporary
+        self.menu_slide.set_sensitive(False)
         
         # Retrieve all files in wallpaper dir
         self.wallpapers = [os.path.join(self.directory, file) 
                 for file in sorted(os.listdir(self.directory))
                 if file.rsplit('.', 1)[-1].lower() in IMAGE_EXT
                 ]
-        current = wallpaper.getWallpaper()
+        current = urllib.unquote(wallpaper.getWallpaper())
         # Set current wallpaper file index
         try:
             self.current_index = self.wallpapers.index(current)
@@ -100,6 +82,36 @@ class WallpaperApp:
 	        print self.directory, self.interval_time
         print self.wallpapers[self.current_index]
         print 'Playing:', self.running
+
+    def initParameters(self, parameters):
+        conf = Configure()
+        conf.add_section(SECTION_NAME)
+        # Read from conf file
+        try:
+            conf.read(CONFIG_FILE)
+            self.directory = os.path.expanduser(conf.get(SECTION_NAME, 'directory'))
+            self.interval_time = conf.getint(SECTION_NAME, 'interval_time')
+        except:
+            self.directory = self.interval_time = None
+            pass
+
+        # Parse command line parameter
+        if(parameters.directory is not None):
+            self.directory = os.path.expanduser(parameters.directory)
+        if(parameters.interval_time is not None):
+            self.interval_time = parameters.interval_time
+
+        if((self.directory is None) or (self.interval_time is None) ):
+            print self.directory, self.interval_time
+            raise Exception('Parameters error. Please refer to README.')
+
+        # Record to conf file
+        dirname = os.path.dirname(CONFIG_FILE)
+        if(not os.path.exists(dirname)):
+            os.makedirs(dirname)
+        conf.set(SECTION_NAME, 'directory', self.directory)
+        conf.set(SECTION_NAME, 'interval_time', self.interval_time)
+        conf.write(open(CONFIG_FILE, 'w'))
     
     def initStatusIcon(self):
         statusicon = gtk.StatusIcon()

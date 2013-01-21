@@ -28,8 +28,9 @@ class WallpaperApp:
     current_index = None
     
     # Mark whether the running status is changed.
-    status_changed = True
+    status_changed = False
     event = threading.Event()
+    running = True
     
     # Essential parameter
     directory = None
@@ -90,14 +91,15 @@ class WallpaperApp:
             self.current_index = 0
             
         # Start to change wallpaper automatically
-        #self.startTimer()
+        self.startTimer()
         
-        self._printParam()
+        self._printParam(True)
             
     def _printParam(self, init = False):
         if(init):
 	        print self.directory, self.interval_time
         print self.wallpapers[self.current_index]
+        print 'Playing:', self.running
     
     def initStatusIcon(self):
         statusicon = gtk.StatusIcon()
@@ -128,19 +130,21 @@ class WallpaperApp:
         thread.daemon = True
         thread.start()
     
-    def StartOrStop(self):
+    def StartOrStop(self, widget = None):
         if(self.running):
             # Going to pause
-            self.menu_slide.set_text('Pause')
-            self.menu_slide.set_image(gtk.STOCK_MEDIA_PAUSE)
+            self.menu_slide.get_image().set_from_stock(gtk.STOCK_MEDIA_PLAY, gtk.ICON_SIZE_MENU)
+            self.menu_slide.set_label('Play')
             self.status_changed = True
             self.event.clear()
+            self.running = False
         else:
             # Going to play
-            self.menu_slide.set_text('Play')
-            self.menu_slide.set_image(gtk.STOCK_MEDIA_PLAY)
+            self.menu_slide.get_image().set_from_stock(gtk.STOCK_MEDIA_PAUSE, gtk.ICON_SIZE_MENU)
+            self.menu_slide.set_label('Pause')
             self.status_changed = True
             self.event.set()
+            self.running = True
     
     def Quit(self, widget=None):
         print 'Quit...'

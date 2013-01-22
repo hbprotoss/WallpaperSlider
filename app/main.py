@@ -58,7 +58,7 @@ class WallpaperApp:
         self.menu_slide = glade.get_object('menu_slide')
         self.menu_slide.set_use_stock(True)
         # TODO:Bugs after recover from Pause state, so disable the menu temporary
-        self.menu_slide.set_sensitive(False)
+        # self.menu_slide.set_sensitive(False)
         
         # Retrieve all files in wallpaper dir
         self.wallpapers = [os.path.join(self.directory, file) 
@@ -66,6 +66,8 @@ class WallpaperApp:
                 if file.rsplit('.', 1)[-1].lower() in IMAGE_EXT
                 ]
         current = urllib.unquote(wallpaper.getWallpaper())
+        print 'Current wallpaper: ', current
+
         # Set current wallpaper file index
         try:
             self.current_index = self.wallpapers.index(current)
@@ -131,6 +133,10 @@ class WallpaperApp:
         def worker():
             while(True):
                 self.event.wait(self.interval_time * 60)
+
+                # Polling wait
+                while(not self.running):
+                    time.sleep(0.5)
                 
                 # If recover from pause status, wait another cycle
                 if(self.status_changed):
@@ -148,14 +154,12 @@ class WallpaperApp:
             self.menu_slide.get_image().set_from_stock(gtk.STOCK_MEDIA_PLAY, gtk.ICON_SIZE_MENU)
             self.menu_slide.set_label('Play')
             self.status_changed = True
-            self.event.clear()
             self.running = False
         else:
             # Going to play
             self.menu_slide.get_image().set_from_stock(gtk.STOCK_MEDIA_PAUSE, gtk.ICON_SIZE_MENU)
             self.menu_slide.set_label('Pause')
             self.status_changed = True
-            self.event.set()
             self.running = True
     
     def Quit(self, widget=None):
